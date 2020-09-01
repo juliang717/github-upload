@@ -6,16 +6,12 @@ Fully Documented.
 TODO: 1
 '''
 
-import pyautogui
-import win32gui
-import win32con
-import random
-import time
-import pytesseract
-import util
+import pyautogui, win32gui, win32con, random, time, pytesseract
 from PIL import ImageOps, ImageEnhance
-from pkr_range import card_to_index
 from termcolor import colored
+
+import util
+from pkr_range import card_to_index
 
 #TODO: Move profiles into a JSON or *.txt file.
 
@@ -152,22 +148,22 @@ gp_large_one_table = {
 bovada_large_one_table = {
     'site': 'bovada',
     'table_title': 'No Limit Hold',
-    'table_window': [(1910, 0, 1940, 2110)],
+    'table_window': [(952, 0, 976, 1038)],
     'solver_window': (-7, 0, 1051, 2110),
-    'table_area': (75, 542, 1767, 976),
+    'table_area': (33, 214, 899, 559),
     'seat': (   #(x, y, low_bound, high_bound)
-        (183, 596, 0, 0),    
-        (183, 164, 0, 0),
-        (895, 32, 0, 0),
-        (1607, 164, 0, 0),
-        (1607, 596, 0, 0)
+        (99, 349, 0, 0),
+        (99, 133, 0, 0),
+        (455, 67, 0, 0),
+        (810, 133, 0, 0),
+        (810, 349, 0, 0)
     ),
     'seat_pix': (
-        (193, 203, 203),
-        (193, 203, 203),
-        (195, 205, 205),
-        (195, 205, 205),
-        (195, 205, 205)
+        (207, 214, 214),
+        (207, 214, 214),
+        (207, 214, 214),
+        (207, 214, 214),
+        (207, 214, 214)
     ),
     'sitting_out': (    #(x, y, expected_pixel_value)
         None,
@@ -184,44 +180,44 @@ bovada_large_one_table = {
         None
     ),
     'cards': (
-        (228, 613),
-        (228, 173),
-        (936, 44),
-        (1651, 173),
-        (1651, 613)
+        (125, 353),
+        (125, 135),
+        (479, 70),
+        (834, 135),
+        (834, 353)
     ),
     'cards_pix': (43, 43, 43),
     'bet_chips': (
-        (302, 608),
-        (358, 349),
-        (1070, 217),
-        (1344, 349),
-        (1400, 608)
+        (158, 351),
+        (186, 223),
+        (542, 157),
+        (680, 223),
+        (707, 351)
     ),
     'bet_chips_pix': None,
     'bet_chips_not_pix': (13, 52, 52),
     'bet_amount': (
-        (397, 1132, 109, 35),
-        (452, 874, 109, 35),
-        (1166, 741, 109, 35),
-        (1439, 874, 109, 35),
-        (1495, 1132, 109, 35)
+        (202, 556, 55, 20),
+        (229, 427, 55, 20),
+        (585, 361, 55, 20),
+        (722, 427, 55, 20),
+        (750, 556, 55, 20)
     ),
-    'bet_option': (1143, 1920, 264, 37),
+    'bet_option': (602, 911, 178, 22),
     'stack_size': (
-        (188, 1225, 189, 48),
-        (188, 795, 189, 48),
-        (900, 663, 189, 48),
-        (1614, 795, 189, 48),
-        (1614, 1225, 189, 48)
+        (100, 605, 80, 22),
+        (100, 389, 80, 22),
+        (455, 324, 80, 22),
+        (812, 390, 80, 22),
+        (812, 606, 80, 22)
     ),
-    'pot_size': (997, 817, 126, 43),
+    'pot_size': (502, 401, 99, 20),
     'button': ( #(x, y)
-        (360, 731),
-        (360, 299),
-        (1072, 136),
-        (1418, 299),
-        (1418, 731)
+        (191, 406),
+        (191, 190),
+        (547, 109),
+        (720, 190),
+        (720, 406)
     ),
     'button_pix': (
         (206, 33, 39),
@@ -231,18 +227,18 @@ bovada_large_one_table = {
         (206, 33, 39),
     ),
     'board_ranks': (
-        (599, 924, 95, 70),
-        (755, 924, 95, 70),
-        (912, 924, 95, 70),
-        (1065, 924, 95, 70),
-        (1220, 924, 95, 70),
+        (302, 453, 45, 35),
+        (380, 453, 45, 35),
+        (458, 453, 45, 35),
+        (536, 453, 45, 35),
+        (613, 453, 45, 35),
     ),
     'board_suits': (
-        (592, 518),
-        (747, 518),
-        (902, 518),
-        (1057, 518),
-        (1212, 518)
+        (304, 304),
+        (380, 304),
+        (459, 304),
+        (536, 304),
+        (614, 304)
     ),
     'board_suits_pix':(
         (0, 0, 0), # Spade
@@ -251,38 +247,38 @@ bovada_large_one_table = {
         (50, 160, 40), # Club
     ),
     'card_dealt': (
-        (931, 399), # 3rd card
-        (1088, 399), # 4th card
-        (1240, 399), # 5th card
+        (474, 248), # 3rd card
+        (551, 248), # 4th card
+        (629, 248), # 5th card
     ),
     'card_dealt_pix': (255, 255, 255),
     'active': (
-        (276, 653),
-        (280, 218),
-        (989, 86),
-        (1701, 222),
-        (1701, 653)
+        (148, 371),
+        (148, 154),
+        (503, 89),
+        (866, 154),
+        (866, 371)
     ),
     'active_not_pix': (13, 52, 52),
-    'hero_active': (890, 956),
+    'hero_active': (511, 441),
     'hero_active_pix': None,
     'hero_active_not_pix': (13, 52, 52),
-    'hero_cards': (971, 704),
+    'hero_cards': (492, 399),
     'hero_cards_pix': (255, 255, 255),
-    'hero_bet_chips': (851, 656),
-    'hero_stack_size': (902, 1364, 189, 48),
+    'hero_bet_chips': (432, 375),
+    'hero_stack_size': (455, 674, 80, 22),
     'hero_ranks': (
-        (876, 1230, 70, 53),
-        (974, 1230, 70, 53)
+        (442, 607, 33, 23),
+        (491, 607, 33, 23)
     ),
     'hero_suits': (
-        (850, 785),
-        (949, 785)
+        (432, 438),
+        (482, 438)
     ),
-    'fold': (0, 0),
-    'check_call': (0, 0),
-    'bet_raise': (0, 0),
-    'betsize': (0, 0)
+    'fold': None,
+    'check_call': None,
+    'bet_raise': None,
+    'betsize': None
 }
 
 cc = bovada_large_one_table
@@ -348,7 +344,6 @@ def get_profile(site, table_list, screensize):
             print("ERROR in get_profile(): Invalid Screen Size:", screensize)
     else:
         print("ERROR in get_profile(): Invalid Site Name:", cc['site'])
-
 
 def positionTables(poker_tables):
     '''
@@ -560,7 +555,6 @@ def read_bet_option(i):
 
     return extract_number(bet_option)
 
-
 def read_potsize(i):
     '''
     Returns the current size of the pot on the i'th table.
@@ -626,7 +620,6 @@ def is_active(player_pos, img):
 
     return img.getpixel(cc['active'][player_pos]) != cc['active_not_pix']
     
-
 def is_hero_turn(img):
     '''
     Takes a screenshot of a poker table.
@@ -740,13 +733,12 @@ def hero_hand(img, table_id):
         text = text.replace('10', 'T')
 
         if len(text) == 2:
-            for i in range(2):
-                if text[i] in ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']:
-                    return text
-                else:
+            for c in text:
+                if not c in ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']:
                     return None
+            return text
         
-        return text
+        return None
     
     suits = hero_suits()
     ranks = hero_ranks(table_id)
@@ -863,7 +855,6 @@ def read_board(img, table_id, start_street=None):
 
     return board
     
-
 def board_rank(i, table_id):
     '''
     Takes an integer specifying the table.
@@ -937,98 +928,95 @@ def get_stakes(table_title):
 
         return (float(sb_value), float(bb_value))
 
-'''
-#TESTING
+def debug():
+    window_list = get_window_list()
+    poker_tables = get_table_list(window_list=window_list)
+    print(poker_tables)
+    positionTables(poker_tables)
 
-window_list = get_window_list()
-poker_tables = get_table_list(window_list=window_list)
+    table_index = 0
 
-positionSolver(window_list)
-positionTables(poker_tables)
+    playing = True
+    while playing:
+        action = input("Action: ")
+        table_img = get_table_img(table_index)
+        table_img.save('img_debug/table.png')
+        if action == 'fold':
+            fold(poker_tables[0][0])
 
-table_index = 0
+        elif action == 'check' or action == 'call':
+            check_call(poker_tables[0][0])
 
-playing = True
-while playing:
-    action = input("Action: ")
-    table_img = get_table_img(table_index)
-    table_img.save('img_debug/table.png')
-    if action == 'fold':
-        fold(poker_tables[0][0])
+        elif action[0:3] == 'bet':
+            bet(action[4:])
 
-    elif action == 'check' or action == 'call':
-        check_call(poker_tables[0][0])
+        elif action == 'seat status':
+            for i in range(6):
+                if seat_open(i, table_img):
+                    print("Seat", i, "is open.")
+                else:
+                    print("Seat", i, "is taken.")
 
-    elif action[0:3] == 'bet':
-        bet(action[4:])
+        elif action == 'sitout status':
+            for i in range(5):
+                print("Seat", i, "is", ("sitting out." if sitting_out(i, table_img) else "not sitting out."))
 
-    elif action == 'seat status':
-        for i in range(5):
-            if seat_open(i, table_img):
-                print("Seat", i, "is open.")
-            else:
-                print("Seat", i, "is taken.")
-
-    elif action == 'sitout status':
-        for i in range(5):
-            print("Seat", i, "is", ("sitting out." if sitting_out(i, table_img) else "not sitting out."))
-
-    elif action == 'waiting status':
-        testing = 1
-        #print(table_img.getpixel((cc['waiting'][testing][0], cc['waiting'][testing][1])))
-    
-    elif action == 'active status':
-        for i in range(0, 6):
-            print("Seat {num}: {active}".format(num=i, active= "Active" if is_active(i, table_img) else "Inactive"))
-
-    elif action == 'card status':#implemented
-        for i in range(6):
-            print("Player", i, ("has cards." if has_cards(i, table_img) else "folded."))
-
-    elif action == 'invested status':#implemented
-        for i in range(5):
-            if has_bet(i, table_img):
-                amount = read_betsize(i, table_index)
-                print("Seat", i, "Bet:", amount)
-
-    elif action == 'button status':#implemented
-        print("Seat", button_pos(table_img), "has the button.")
-
-    elif action == 'hero status':
-        print("Hero", ("has cards." if hero_has_cards(table_img) else "does not have cards."))
-        print("Hero has", ("bet." if has_bet(-1, table_img) else "not bet."))
-        print("Hero is", ("active." if is_hero_turn(table_img) else "inactive."))
-
-    elif action == 'hand status':
-        if hero_has_cards(table_img):
-            print('Hero Hand:', hero_hand(table_img, table_index))
-        else:
-            print("Hero does not have cards.")
-
-    elif action == 'board status':
-        print("Board:", read_board(table_img, table_index))
-
-    elif action == 'stacksize status':
-        for i in range(5):
-            print("Seat", i, "Stack:", player_stacksize(i, table_index))
-
-    elif action == 'pot status':
-        print("Potsize:", read_potsize(table_index))
-
-    elif action == 'option status':
-        print("Bet Option:", read_bet_option(table_index))
+        elif action == 'waiting status':
+            pass
+            #print(table_img.getpixel((cc['waiting'][testing][0], cc['waiting'][testing][1])))
         
-    elif action == 'street status':
-        print("Street:", current_street(table_img))
+        elif action == 'active status':
+            for i in range(0, 6):
+                print("Seat {num}: {active}".format(num=i, active= "Active" if is_active(i, table_img) else "Inactive"))
 
-    elif action == 'stakes status':
-        stakes = get_stakes(poker_tables[0][1])
-        print("Stakes:", str(stakes[0]) + '/' + str(stakes[1]))
+        elif action == 'card status':
+            for i in range(6):
+                print("Player", i, ("has cards." if has_cards(i, table_img) else "folded."))
 
-    elif action == 'end':
-        playing = False
+        elif action == 'invested status':
+            for i in range(1, 6):
+                if has_bet(i, table_img):
+                    amount = read_betsize(i, table_index)
+                    print("Seat", i, "Bet:", amount)
 
-    else:
-        print("Invalid. Try again.")
+        elif action == 'button status':
+            print("Seat", button_pos(table_img), "has the button.")
 
-'''
+        elif action == 'hero status':
+            print("Hero", ("has cards." if hero_has_cards(table_img) else "does not have cards."))
+            print("Hero has", ("bet." if has_bet(-1, table_img) else "not bet."))
+            print("Hero is", ("active." if is_hero_turn(table_img) else "inactive."))
+
+        elif action == 'hand status':
+            if hero_has_cards(table_img):
+                print('Hero Hand:', hero_hand(table_img, table_index))
+            else:
+                print("Hero does not have cards.")
+
+        elif action == 'board status':
+            print("Board:", read_board(table_img, table_index))
+
+        elif action == 'stacksize status':
+            for i in range(6):
+                print("Seat", i, "Stack:", player_stacksize(i, table_index))
+
+        elif action == 'pot status':
+            print("Potsize:", read_potsize(table_index))
+
+        elif action == 'option status':
+            print("Bet Option:", read_bet_option(table_index))
+            
+        elif action == 'street status':
+            print("Street:", current_street(table_img))
+
+        elif action == 'stakes status':
+            stakes = get_stakes(poker_tables[0][1])
+            print("Stakes:", str(stakes[0]) + '/' + str(stakes[1]))
+
+        elif action == 'end':
+            playing = False
+
+        else:
+            print("Invalid. Try again.")
+
+#debug()

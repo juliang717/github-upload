@@ -8,28 +8,28 @@ from termcolor import colored
 import pkr_range, util, imagesearch
 from interface import get_window_list
 
-base_dir = r'C:\Users\Julian\Desktop\Bot\database'
-legacy_dir = r'C:\Users\Julian\Desktop\Bot\legacy_boards.txt'
+base_dir = r'C:\Users\julia\Desktop\Bot\database'
+legacy_dir = r'C:\Users\julia\Desktop\Bot\legacy_boards.txt'
 
 locs = {
-    'run_solver_btn': (91, 532),
-    'process_db_area': (250, 500, 677, 739),
-    'select_flop_base': (1255, 235),
-    'select_flop_offset': 21,
-    'node1_btn': (38, 113),
-    'raw_data_area': (664, 280, 745, 861),
-    'raw_data_offset': (14, 14),
-    'data_check': (974, 1438, 3, 3),
-    'data_pix': (240, 240, 240),
-    'data_popup': (788, 969),
-    'menu_check': (818, 988, 3, 3),
-    'menu_pix': (240, 240, 240),
-    'select_all_offset': (75, 188),
-    'vert_offset': 29,
-    'area2': (398, 92, 470, 135),
-    'area3': (584, 92, 659, 135),
-    'area4': (791, 92, 848, 135),
-    'node_offset': 195,
+    'run_solver_btn': (79, 474), ###
+    'process_db_area': (265, 469, 461, 605), ###
+    'select_flop_base': (765, 203), ###
+    'select_flop_offset': 18, ###
+    'node1_btn': (44, 97), ###
+    'raw_data_area': (545, 247, 659, 735), ###
+    'raw_data_offset': (-14, 14), # ???
+    'data_check': (605, 853, 3, 3), ###
+    'data_pix': (240, 240, 240), # ???
+    'data_popup': (361, 359), ###
+    'menu_check': (108, 488, 3, 3), ###
+    'menu_pix': (242, 242, 242), ###
+    'select_all_offset': (-178, 149), ###
+    'vert_offset': 32, ###
+    'area2': (342, 77, 410, 125), ###
+    'area3': (502, 77, 577, 125), ###
+    'area4': (664, 77, 743, 125), ###
+    'node_offset': 165, ###
 }
 
 # Villain is Hero:
@@ -372,38 +372,39 @@ def add_solve(pot_type, hero_pos, villain_pos, sizes, raise_sizes, solver_pos, s
                 locs['node1_btn'][1] + (i * locs['vert_offset']) + solver_pos[1])
             if i == (len(sizes) - 1):
                 for j in range(len(sizes)): # get ip facing-check ranges
-                    time.sleep(0.1)
-                    pyautogui.click(
-                        locs['node1_btn'][0] + locs['node_offset'] + solver_pos[0],
-                        locs['node1_btn'][1] + solver_pos[1])
+                    while (imagesearch.imagesearcharea('img/icon2.png', 
+                        locs['area3'][0] + solver_pos[0],
+                        locs['area3'][1] + solver_pos[1],
+                        locs['area3'][2] + solver_pos[0],
+                        locs['area3'][3] + solver_pos[1])[0] != -1):
+                        pyautogui.click(
+                            locs['node1_btn'][0] + locs['node_offset'] + solver_pos[0],
+                            locs['node1_btn'][1] + solver_pos[1])
                     while (imagesearch.imagesearcharea('img/icon1.png',
                         locs['area2'][0] + solver_pos[0],
                         locs['area2'][1] + solver_pos[1],
                         locs['area2'][2] + solver_pos[0],
-                        locs['area2'][3] + solver_pos[1])[0] == -1
-                        or imagesearch.imagesearcharea('img/icon2.png', 
-                            locs['area3'][0] + solver_pos[0],
-                            locs['area3'][1] + solver_pos[1],
-                            locs['area3'][2] + solver_pos[0],
-                            locs['area3'][3] + solver_pos[1])[0] != -1):
+                        locs['area2'][3] + solver_pos[1])[0] == -1):
                         time.sleep(0.1)
                     range_to_file(raw_data_to_range(get_raw_data(locs['node1_btn'][0] + locs['node_offset'], locs['node1_btn'][1], solver_pos), j + 1, len(sizes)), pot_type, villain_pos, hero_pos, 'fx', '0.0' , str(sizes[j]), board)
                     if j != (len(sizes) - 1):
-                        pyautogui.click(locs['node1_btn'][0] + locs['node_offset'] * 2, locs['node1_btn'][1] + (j * locs['vert_offset']))
+                        pyautogui.click(
+                            locs['node1_btn'][0] + locs['node_offset'] * 2,
+                            locs['node1_btn'][1] + (j * locs['vert_offset']))
                         for k in range(len(raise_sizes)):   # get oop facing-bet ranges
-                            pyautogui.click(
-                                locs['node1_btn'][0] + locs['node_offset'] * 2 + solver_pos[0],
-                                locs['node1_btn'][1] + solver_pos[1])
+                            while (imagesearch.imagesearcharea('img/icon1.png',
+                                locs['area4'][0] + solver_pos[0],
+                                locs['area4'][1] + solver_pos[1],
+                                locs['area4'][2] + solver_pos[0],
+                                locs['area4'][3] + solver_pos[1])[0] != -1):
+                                pyautogui.click(
+                                    locs['node1_btn'][0] + locs['node_offset'] * 2 + solver_pos[0],
+                                    locs['node1_btn'][1] + solver_pos[1])
                             while (imagesearch.imagesearcharea('img/icon2.png',
                                 locs['area3'][0] + solver_pos[0],
                                 locs['area3'][1] + solver_pos[1],
                                 locs['area3'][2] + solver_pos[0],
-                                locs['area3'][3] + solver_pos[1])[0] == -1
-                                or imagesearch.imagesearcharea('img/icon1.png',
-                                    locs['area4'][0] + solver_pos[0],
-                                    locs['area4'][1] + solver_pos[1],
-                                    locs['area4'][2] + solver_pos[0],
-                                    locs['area4'][3] + solver_pos[1])[0] != -1):
+                                locs['area3'][3] + solver_pos[1])[0] == -1):
                                 time.sleep(0.1)
                             range_to_file(raw_data_to_range(get_raw_data(locs['node1_btn'][0] + locs['node_offset'] * 2, locs['node1_btn'][1], solver_pos), k + 1, len(raise_sizes) + 1), pot_type, hero_pos, villain_pos, 'fb', str(sizes[j]), str(raise_sizes[k]), board)
                             if k != (len(raise_sizes) - 1):
@@ -411,9 +412,11 @@ def add_solve(pot_type, hero_pos, villain_pos, sizes, raise_sizes, solver_pos, s
                                     locs['node1_btn'][0] + locs['node_offset'] * 3 + solver_pos[0],
                                     locs['node1_btn'][1] + (k * locs['vert_offset']) + solver_pos[1])
                                 for n in range(len(raise_sizes)):   # get ip facing-raise ranges
+                                    '''
                                     pyautogui.click(
                                         locs['node1_btn'][0] + locs['node_offset'] * 3 + solver_pos[0],
                                         locs['node1_btn'][1] + solver_pos[1])
+                                    '''
                                     while imagesearch.imagesearcharea('img/icon1.png',
                                         locs['area4'][0] + solver_pos[0],
                                         locs['area4'][1] + solver_pos[1],
@@ -423,19 +426,19 @@ def add_solve(pot_type, hero_pos, villain_pos, sizes, raise_sizes, solver_pos, s
                                     range_to_file(raw_data_to_range(get_raw_data(locs['node1_btn'][0] + locs['node_offset'] * 3, locs['node1_btn'][1], solver_pos), n + 1, len(raise_sizes) + 1), pot_type, villain_pos, hero_pos, 'fr', str(sizes[j]) + '-' + str(raise_sizes[k]), str(raise_sizes[n]), board)
             else:
                 for j in range(len(raise_sizes)): # get ip facing-bet ranges
-                    pyautogui.click(
-                        locs['node1_btn'][0] + locs['node_offset'] + solver_pos[0],
-                        locs['node1_btn'][1] + solver_pos[1])
+                    while (imagesearch.imagesearcharea('img/icon2.png',
+                        locs['area3'][0] + solver_pos[0],
+                        locs['area3'][1] + solver_pos[1],
+                        locs['area3'][2] + solver_pos[0],
+                        locs['area3'][3] + solver_pos[1])[0] != -1):
+                        pyautogui.click(
+                            locs['node1_btn'][0] + locs['node_offset'] + solver_pos[0],
+                            locs['node1_btn'][1] + solver_pos[1])
                     while (imagesearch.imagesearcharea('img/icon1.png',
                         locs['area2'][0] + solver_pos[0],
                         locs['area2'][1] + solver_pos[1],
                         locs['area2'][2] + solver_pos[0],
-                        locs['area2'][3] + solver_pos[1])[0] == -1
-                        or imagesearch.imagesearcharea('img/icon2.png',
-                            locs['area3'][0] + solver_pos[0],
-                            locs['area3'][1] + solver_pos[1],
-                            locs['area3'][2] + solver_pos[0],
-                            locs['area3'][3] + solver_pos[1])[0] != -1):
+                        locs['area2'][3] + solver_pos[1])[0] == -1):
                         time.sleep(0.1)
                     range_to_file(raw_data_to_range(get_raw_data(locs['node1_btn'][0] + locs['node_offset'], locs['node1_btn'][1], solver_pos), j + 1, len(raise_sizes) + 1), pot_type, villain_pos, hero_pos, 'fb', str(sizes[i]), str(raise_sizes[j]), board)
                     if j != (len(raise_sizes) - 1):
@@ -443,9 +446,11 @@ def add_solve(pot_type, hero_pos, villain_pos, sizes, raise_sizes, solver_pos, s
                             locs['node1_btn'][0] + locs['node_offset'] * 2 + solver_pos[0],
                             locs['node1_btn'][1] + (j * locs['vert_offset']) + solver_pos[1])
                         for k in range(len(raise_sizes)): # get oop facing-raise ranges
+                            '''
                             pyautogui.click(
                                 locs['node1_btn'][0] + locs['node_offset'] * 2 + solver_pos[0],
                                 locs['node1_btn'][1] + solver_pos[1])
+                            '''
                             while imagesearch.imagesearcharea('img/icon2.png', 
                                 locs['area3'][0] + solver_pos[0],
                                 locs['area3'][1] + solver_pos[1],
@@ -474,7 +479,7 @@ def add_solve(pot_type, hero_pos, villain_pos, sizes, raise_sizes, solver_pos, s
             add_solution(pot_type, hero_pos, villain_pos, sizes, raise_sizes, flops[i])
             print(str(i))
             print(flops[i])
-            time.sleep(3)
+            time.sleep(0.2)
 
 def get_flop_list(legacy_mode=False):
     flops = []
@@ -537,7 +542,7 @@ def get_raw_data(x, y, solver_pos):   # grabs a GTO+ range in raw data format
         if pos[0] != -1:
             break
         fail_count += 1
-        if fail_count >= 20:
+        if fail_count >= 8:
             return get_empty_data()
 
     #Open Data Window
@@ -808,13 +813,13 @@ def apply_translation(card_string, translation, reverse=False):
         print('Invalid card_string: Odd number of characters.')
         return None
 
-def check_solve(pot_type, hero_pos, villain_pos, facing, face_size, response_size, action, total_actions, solver_pos, legacy_mode=False, start=24):
+def check_solve(pot_type, hero_pos, villain_pos, facing, face_size, response_size, action, total_actions, solver_pos, legacy_mode=False, start=19):
     flops = get_flop_list(legacy_mode=legacy_mode)
     vert_offset = (total_actions - 2) * locs['vert_offset']
     correct = True
 
-    for i in range(start, 1755, 25):
-        select_flop(i, solver_pos, y_offset=vert_offset)
+    for i in range(start, 1755, 20):
+        select_flop(19, solver_pos, y_offset=vert_offset)
         pyperclip.copy(get_raw_data(locs['node1_btn'][0], locs['node1_btn'][1], solver_pos))
         path = base_dir + '\\{pot_type}\\{hero_pos}\\{villain_pos}\\{face_action}\\{face_size}\\{response_size}\\{board}.txt'.format(
             pot_type=pot_type, 
@@ -850,10 +855,12 @@ def solve_equals_file(path, action, total_actions):
 
     return clipboard == file_text
 
+r'''
 solver_pos = ()
 for window in get_window_list():
     if 'GTO' in window[1]:
         solver_pos = (window[2][0], window[2][1])
 
-add_solve('3bp', 'bb', 'co', [66.7, 33.3, 0.0], [75.0, 0.0], solver_pos, start=0)
-#check_solve('2bp', 'lj', 'hj', 'fx', '0.0', '83.3', 1, 3, solver_pos, start=24)
+add_solve('3bp', 'sb', 'lj', [66.7, 33.3, 0.0], [75.0, 0.0], solver_pos, start=0)
+#check_solve('3bp', 'sb', 'btn', 'fx', '0.0', '66.7', 1, 3, solver_pos)
+'''

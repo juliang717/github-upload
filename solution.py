@@ -92,7 +92,6 @@ class Solver:
 
         return tuple([new_x, new_y] + remaining_pos)
 
-
     def select_element(self, button, area, pixel, inverse=False):
         '''
         Clicks the button at the given location relative to this solver, screenshots the given area and repeats until

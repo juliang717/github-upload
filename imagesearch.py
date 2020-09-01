@@ -32,6 +32,8 @@ def region_grabber(region):
 
     try:
         return pyautogui.screenshot(region=(x1, y1, width, height))
+    except:
+        return pyscreenshot.grab(bbox=region, backend='pil')
 
 
 '''

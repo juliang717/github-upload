@@ -1,11 +1,8 @@
-import pkr_range
-import player
-import pyautogui
-import time
-import util
-import database as db
-import random
+import pyautogui, time, random
 from termcolor import colored
+
+import pkr_range, player, decision, util, client
+import database as db
 
 class GameState:
 
@@ -37,6 +34,11 @@ class GameState:
         self.timeout = 0                #time to act again
         self.delayed_action = None      #string: action to take after timeout
         self.waiting_counter = None     #time.monotic() value when gamestate started waiting for a new hand.
+        self.solved = False             #'solved' if a create solve command has been sent, 'queried' if current get range request has been sent, 
+        self.solver_dec = False         #Holds Hero's upcoming decision as a tuple: (range, decision_str), or None if no decision has been made.
+        self.wait_range = False         #True if waiting for response from solver
+        self.request_queue = []         #Queue failed send requests to retry at later time
+        self.street_changes = 0            #Number of street changes before current solve is invalid
 
     def inc_img_counter(self):
         self.img_counter += 1
@@ -121,6 +123,9 @@ class GameState:
         else: 
             self.current_action += 1
     
+    def closed_count(self):
+        return sum([p.closed for p in self.players])
+
     def action_closed(self):
         for p in self.players:
             if not p.closed:
@@ -184,8 +189,9 @@ class GameState:
 
     def call(self):
         if not self.is_hero_turn():
-            self.facing_action(self.current_action)
-            #Assign Range
+            facing = self.facing_action(self.current_action)
+            if facing:
+                self.assign_range(facing[0], facing[1], facing[2], 'c')
         print(colored("{position}({stack}){is_hero} calls {amount}".format(
             position=self.get_curr_player().get_position().upper(),
             stack=str(self.get_curr_player().stacksize - 
@@ -200,8 +206,9 @@ class GameState:
 
     def check(self):
         if not self.is_hero_turn():
-            self.facing_action(self.current_action)
-            #Assign Range
+            facing = self.facing_action(self.current_action)
+            if facing:
+                self.assign_range(facing[0], facing[1], facing[2], 'x')
         print(colored("{position}({stack}){is_hero} checks".format(
             position=self.get_curr_player().get_position().upper(),
             stack=self.get_curr_player().stacksize,
@@ -213,8 +220,9 @@ class GameState:
 
     def bet(self, amount, percentage=False):
         if not self.is_hero_turn():
-            self.facing_action(self.current_action)
-            #Assign Range
+            facing = self.facing_action(self.current_action)
+            if facing:
+                self.assign_range(facing[0], facing[1], facing[2], str(amount))
         self.bet_level += 1
 
         raw_amount = amount
@@ -233,7 +241,7 @@ class GameState:
             self.action_sequence.append([self.get_player(self.current_action).get_position(), 'r', raw_amount])
         else:
             self.action_sequence.append([self.get_player(self.current_action).get_position(),
-                'r', round(raw_amount - self.highest_bet / self.pot + self.highest_bet, 1)])
+                'r', round((raw_amount - self.highest_bet) / (self.pot + self.highest_bet), 2) * 100])
 
         self.highest_bet = raw_amount
 
@@ -265,6 +273,11 @@ class GameState:
         for player in self.players:
             player.invested = 0.0
             player.closed = False
+
+        if self.street_changes:
+            self.street_changes = self.street_changes - 1
+        else:
+            self.solved = False
 
         print(colored('_' * 70, 'magenta'))
         print(colored("Board: {board} \t Pot: {pot}".format(board=self.get_board(), pot=str(self.get_pot())), 'magenta'))
@@ -310,11 +323,11 @@ class GameState:
 
     def facing_action(self, player_pos):
         '''
-        Returns tuple representing the action the current player is facing.
+        Returns tuple representing the action the current player is facing: (action, position, sizing)
         
         Preflop:
-        The action(s) of villain(s) is/are followed by (v) and the actions of
-        the Hero are followed by (h). For example, 
+        The action(s) of villains are followed by (v) and the actions of
+        Hero are followed by (h). For example, 
         'rfi(v)_3b(h)_4b(v)' = RFI (Villain) -> 3bet (Hero) -> 4bet (Villain)
 
         Below, Hero refers to the player specified by the position index player_pos.
@@ -332,6 +345,7 @@ class GameState:
         prev_raise_size = 0.0
         f_action = ''
         pos_list = []
+        sizing = None
 
         if self.get_street() == 'Preflop':
 
@@ -391,172 +405,93 @@ class GameState:
         else:
             if len(self.players) == 2:
                 #Append Villain position:
-                pos_list.append(self.players[0].position if self.hero_pos == 1 else self.players[1].position)
+                pos_list.append(self.players[0].position if player_pos == 1 else self.players[1].position)
 
                 if self.bet_level == 0:
                     f_action = 'fx'
-                elif self.bet_level == 1:
-                    f_action = 'fb'
-                elif self.bet_level == 2:
-                    f_action = 'fr'
+                    sizing = 0.0
+                else:
+                    if self.bet_level == 1:
+                        f_action = 'fb'
+                    elif self.bet_level == 2:
+                        f_action = 'fr'
+
+                    for i in range(1, len(self.action_sequence) + 1):
+                        if self.action_sequence[-i][1] == 'r':
+                            sizing = self.action_sequence[-i][2]
+                            break
         
         if f_action == '':
             return None
 
-        return (f_action, pos_list)
+        return (f_action, pos_list, sizing)
 
-    def assign_range(self, facing, action, hero):
+    def assign_range(self, facing, pos_list, faced_sizing, action):
         '''
         Takes action string (for example:'x', 'c', or '9.5')
-        Assigns a poker range to the currently acting player based on his action.
+        Assigns a poker range to the currently acting villain based on his action.
         '''
         path = ''
-        error = False
-
-        if util.is_number(action):
-            action = 'r'
+        pos_list = [self.get_curr_player().position] + pos_list
 
         if self.get_street() == 'Preflop':
-            #TODO Assign flop ranges
-            pass
+            if util.is_number(action):
+                action = 'r'
+            elif action == 'x':
+                action = 'c'
+            path = db.get_path('preflop', facing, pos_list, action, False)
         elif self.get_street() == 'Flop':
-            #TODO Assign flop ranges
-            pass
+            if ((self.bet_level == 2 and util.is_number(action)) or
+                self.bet_level > 2 or
+                len(self.players) > 2 or
+                self.pot_type != '2bp'):
+                pass
+            else:
+                if action == 'c' or action == 'x':
+                    action = '0.0'
+                path = db.get_path('flop', facing, pos_list, action, False, flop=self.board, pot_type=self.pot_type, sizing=faced_sizing)
         elif self.get_street() == 'Turn':
-            #TODO Assign turn ranges
-            pass
+            if len(self.players == 2):
+                if self.solved:
+                    client.get_ranges(
+                        0,
+                        self.get_curr_player() == self.players[0],
+                        facing,
+                        action,
+                        self.get_curr_player().position
+                    )
+                    self.wait_range = True
         elif self.get_street() == 'River':
             #TODO Assign river ranges
             pass
             
-        if path != '':
-            self.get_curr_player().set_range(pkr_range.PkrRange())
-        elif not error:
-            print("Range not implemented yet." + 
-                "Street: {street} Facing: {facing} Action: {action}".format(
-                street=self.get_street(), facing=facing, action=action))
+        if not path:
+            print("No range path given. Could not assign range to {n}.".format(n=self.get_curr_player().seat))
+            self.get_curr_player().set_range(None)
+        else:
+            self.get_curr_player().hand_range = pkr_range.PkrRange(path)
+            print("{pos} range: {combos}".format(
+                pos=self.get_curr_player().position.upper(),
+                combos=self.get_curr_player().hand_range.combos
+            ))
+        '''
         else:
             print("ERROR in assign_range(): Street: {street} Facing: {facing} Action: {action}".format(
                 street=self.get_street(), facing=facing, action=action))
-
-    def hero_decision(self, sizing=None):
         '''
-        Takes current street, the action faced (for example, 'x', '10.5', etc), 
-        and villain's position.
-        1) Chooses hero's decision. 
-        2) Assigns hero's range.
-        3) Returns the chosen action.
-        '''
-        def get_ranges(sizing):
-            street = self.get_street().lower()
 
-            if street == 'preflop':
-                return [(pkr_range.PkrRange(path[0]), path[1]) for path in db.get_path(
-                    street, facing, pos_list, None, True)]
-            elif street == 'flop':
-                if sizing:
-                    return [(pkr_range.PkrRange(path[0]), path[1]) for path in db.get_path(
-                        street, facing, pos_list, None, True, flop=self.board[:6], pot_type=self.pot_type,
-                        sizing=sizing
-                )]
-                else:
-                    print(colored("ERROR in get_ranges(): Street is Flop and no sizing was given."))
-            elif street == 'turn':
-                print(colored("Cannot make decisions on Turn. Skipping hand ...", 'red'))
-                return None
-            elif street == 'river':
-                print(colored("Cannot make decisions on River. Skipping hand ...", 'red'))
-                return None
+    def hero_decision(self):
+        choice = decision.hero_decision(self)
 
-        def make_decision(ranges):
-            '''
-            Returns tuple of (action, range) for hero's decision given the current situation.
-            Non-deterministic.
-            '''
-            if not ranges:
-                return None
-                
-            if sum([r[0].combos for r in ranges]) == 0:
-                print(colored("Only empty ranges were found. Skipping hand ...", 'red'))
-                return None
-
-            random.seed()
-            decision = ('', None)
-            frequencies = [r[0].get_frequency(self.hero_hand)*10000 for r in ranges]
-            targets = []
-
-            target_counter = 1
-
-            for i in range(len(frequencies)):
-                targets.append((target_counter, target_counter + frequencies[i]))
-                target_counter += frequencies[i]
-                print("Option {i}: {action} | {freq}% | {target}".format(
-                    i=i, action=ranges[i][1], freq=frequencies[i] / 10000, target=targets[i]
-                ))
-                
-            choice = random.randrange(1, 1000001)
-            print("Choice:", choice)
-            
-            for i in range(len(targets)):
-                if targets[i][0] <= choice < targets[i][1]:
-                    decision = ranges[i]
-                           
-            if decision[0] == '':
-                if self.highest_bet == 0:
-                    decision = (None, 'x')
-                else:
-                    decision = (None, 'f')
-            
-            return decision
-
-        # Error if it is not Hero's Turn
-        if not self.is_hero_turn:
-            print(colored("ERROR in hero_decision: It is not Hero's turn.", 'red'))
+        if not choice:
             return None
 
-        # Cannot solve hand (yet) if multiway pot
-        player_count = len(self.players)
-        if self.get_street().lower() != 'preflop' and player_count > 2:
-            print(colored("Cannot make decisions in {player_count}-way pot. Skipping hand ...".format(
-                player_count=player_count
-            ), 'red'))
-            return None
+        self.players[self.hero_pos].set_range(choice[0])
 
-        faced_action = self.facing_action(self.current_action)
-
-        # Cannot solve hand (yet) if obscure action (for example, 3-bet+ postflop). Only applies to postflop currently.
-        if not faced_action:
-            print(colored("Unknown game path. Skipping hand ...", 'red'))
-            return None
-
-        facing = faced_action[0]
-        pos_list = [self.players[self.hero_pos].position] + faced_action[1]
-        sizing = None
-
-        if self.get_street().lower() == 'flop':
-            if facing == 'fx':
-                sizing = '0.0'
-            else:
-                for action in self.action_sequence:
-                    if action[1] == 'r':
-                        sizing = str(adjust_size(action[2]))
-                        break
-                    
-        print()
-        print("Hero Decision:")
-        print("Facing {facing} from {pos_list}.".format(facing=facing, pos_list=pos_list))
-
-        decision = make_decision(get_ranges(sizing))
-        
-        if not decision:
-            return None
-
-        self.players[self.hero_pos].set_range(decision[0])
-
-        print("Decision:", decision[1])
+        print("Decision:", choice[1])
         print()
 
-        return decision[1]
+        return choice[1]
 
     def fast_fold(self):
         '''
@@ -591,25 +526,10 @@ class GameState:
 
         return True if freq_sum == 0.0 else False
 
-def adjust_size(size, raising=False):
-    if raising:
-        size_list = db.raise_sizes
-    else:
-        size_list = db.bet_sizes
+    def process_response(self, resp):
+        if resp[1] == 'hero':
+            self.solver_dec = decision.make_decision(self, resp[0])
+        else:
+            self.players[self.player_pos_to_num(resp[1].lower())].hand_range = resp[0]
+            self.wait_vill_range = False
 
-    differences = [abs(curr_size - size) for curr_size in size_list]
-
-    return size_list[differences.index(min(differences))]
-
-"""
-test = GameState()
-test.new_hand(6, 5)
-test.apply_action('f-f-f-3-c-f')
-print(test.action_sequence)
-test.apply_action('_AcTd4h_x-x')
-print(test.action_sequence)
-test.apply_action('_3h_7-c')
-print(test.action_sequence)
-test.apply_action('_3s_x-x')
-print(test.action_sequence)
-"""
